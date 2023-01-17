@@ -11,6 +11,10 @@ and
 complete represents the word that has been learned. The next-level key of learn and complete represents the category of
 the word, and the value represents the specific word.
 
+## How to use it
+
+After opening the software, click on the classification, enter the translation of the prompt, and click submit.
+
 #### example
 
 ```json
@@ -27,3 +31,9 @@ the word, and the value represents the specific word.
   }
 }
 ```
+
+# Install
+
+`cargo add ladder`
+or
+`cargo build --release`
