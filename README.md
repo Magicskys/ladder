@@ -2,9 +2,12 @@
 
 This is a multilingual word learning software.
 
+![img.png](media/main.png)
+
 ## How to add words to the software
 
-The project contains the **words.json** file, json contains learn and complete, learn represents the word being learned, and
+The project contains the **words.json** file, json contains learn and complete, learn represents the word being learned,
+and
 complete represents the word that has been learned. The next-level key of learn and complete represents the category of
 the word, and the value represents the specific word.
 

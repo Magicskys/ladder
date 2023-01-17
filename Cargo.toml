@@ -1,8 +1,13 @@
 [package]
-name = "english"
+name = "ladder"
 version = "0.1.0"
 edition = "2021"
-
+authors = ["Magicskys <lonenysky@gmail.com>"]
+description = "This is a multilingual word learning software."
+repository = "https://github.com/Magicskys/ladder"
+license-file = "LICENSE"
+readme = "README.md"
+keywords = ["english", "language-learning"]
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]

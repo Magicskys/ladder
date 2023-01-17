@@ -6,7 +6,7 @@ use std::fs::File;
 use std::io::Write;
 use std::time::Duration;
 use eframe::egui;
-use eframe::egui::{Align, Direction, Layout, ScrollArea};
+use eframe::egui::{Align, Layout, ScrollArea};
 use rand::seq::IteratorRandom;
 use egui_notify::{Toasts};
 
@@ -124,7 +124,7 @@ impl EnglishApp {
 
 fn main() {
     let native_options = eframe::NativeOptions::default();
-    eframe::run_native("Language Learning Platform", native_options, Box::new(|cc| Box::new(EnglishApp::new(cc))));
+    eframe::run_native("ladder - Language Learning Platform", native_options, Box::new(|cc| Box::new(EnglishApp::new(cc))));
 }
 
 fn setup_custom_fonts(ctx: &egui::Context) {
