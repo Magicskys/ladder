@@ -6,9 +6,10 @@ use std::fs::File;
 use std::io::Write;
 use std::time::Duration;
 use eframe::egui;
-use eframe::egui::{Align, Layout, ScrollArea};
+use eframe::egui::{Align, Label, Layout, RichText, ScrollArea, Sense};
 use rand::seq::IteratorRandom;
 use egui_notify::{Toasts};
+use tts::*;
 
 #[macro_use]
 extern crate serde;
@@ -88,7 +89,19 @@ struct EnglishApp {
     answer: String,
     correct_rate: i32,
     error_rate: i32,
+    tts: Option<Tts>,
 }
+
+impl EnglishApp {
+    fn play_audio(&mut self) -> Option<()> {
+        if self.question != "" {
+            let x = self.tts.as_mut()?;
+            (*x).speak(self.answer.clone(), false);
+        }
+        Some(())
+    }
+}
+
 
 fn read_words_json() -> Words {
     let words = Words { learn: HashMap::new(), complete: HashMap::new() };
@@ -118,6 +131,7 @@ impl EnglishApp {
         let words = read_words_json();
         let mut s = Self::default();
         s.words = words;
+        s.tts = Tts::default().ok();
         s
     }
 }
@@ -157,7 +171,7 @@ impl eframe::App for EnglishApp {
                 ScrollArea::vertical()
                     .show_viewport(ui, |ui, _viewport| {
                         ui.vertical_centered_justified(|ui| {
-                            for (category, _) in &self.words.learn {
+                            for (category, _) in &self.words.learn.clone() {
                                 if ui.button(format!("{}", category)).clicked()
                                 {
                                     self.category = category.clone();
@@ -167,6 +181,7 @@ impl eframe::App for EnglishApp {
                                         self.error_rate = 0;
                                         self.question = sample.0;
                                         self.answer = sample.1;
+                                        self.play_audio();
                                     };
                                 };
                             }
@@ -196,7 +211,9 @@ impl eframe::App for EnglishApp {
             });
             ui.vertical_centered(|ui| {
                 ui.add_space(40.0);
-                ui.heading(&self.question);
+                if ui.add(Label::new(RichText::new(&self.question).heading()).sense(Sense::click())).clicked() {
+                    self.play_audio();
+                }
                 ui.heading("");
                 ui.spacing_mut().item_spacing.x = 0.0;
                 ui.label("Please input english word");
@@ -206,17 +223,18 @@ impl eframe::App for EnglishApp {
                 if ui.button("submit").clicked() {
                     if self.text == self.answer {
                         self.toasts.success("Success Word").set_duration(Some(Duration::from_secs(3)));
-                        self.text = "".to_string();
                         self.correct_rate += 1;
                         self.words.complete_word(&self.category, &self.question, self.answer.clone());
                     } else {
                         self.error_rate += 1;
                         self.toasts.error("Error Word").set_duration(Some(Duration::from_secs(3)));
                     }
+                    self.text = "".to_string();
                     if let Some(wd) = self.words.learn.get(&self.category) {
                         let sample = wd.random_sample();
                         self.question = sample.0;
                         self.answer = sample.1;
+                        self.play_audio();
                     };
                 }
             });

@@ -1,6 +1,6 @@
 [package]
 name = "ladder"
-version = "0.1.0"
+version = "0.1.2"
 edition = "2021"
 authors = ["Magicskys <lonenysky@gmail.com>"]
 description = "This is a multilingual word learning software."
@@ -16,6 +16,7 @@ serde = { version = "1", features = ["derive"] }
 serde_json = "1.0"
 rand = "0.8.5"
 egui-notify = "0.5"
+tts = "0.25.0"
 
 [profile.release]
 lto = true
