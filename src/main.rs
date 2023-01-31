@@ -172,16 +172,22 @@ impl eframe::App for EnglishApp {
                     .show_viewport(ui, |ui, _viewport| {
                         ui.vertical_centered_justified(|ui| {
                             for (category, _) in &self.words.learn.clone() {
-                                if ui.button(format!("{}", category)).clicked()
-                                {
-                                    self.category = category.clone();
-                                    if let Some(wd) = self.words.learn.get(&self.category) {
-                                        let sample = wd.random_sample();
-                                        self.correct_rate = 0;
-                                        self.error_rate = 0;
-                                        self.question = sample.0;
-                                        self.answer = sample.1;
-                                        self.play_audio();
+                                let category_button = egui::Button::new(format!("{}", category));
+                                self.category = category.clone();
+                                if self.words.remaining_words(&self.category) == 0 {
+                                    ui.add_enabled(false, category_button);
+                                } else {
+                                    if ui.add(category_button).clicked()
+                                    {
+                                        self.category = category.clone();
+                                        if let Some(wd) = self.words.learn.get(&self.category) {
+                                            let sample = wd.random_sample();
+                                            self.correct_rate = 0;
+                                            self.error_rate = 0;
+                                            self.question = sample.0;
+                                            self.answer = sample.1;
+                                            self.play_audio();
+                                        };
                                     };
                                 };
                             }
