@@ -173,8 +173,7 @@ impl eframe::App for EnglishApp {
                         ui.vertical_centered_justified(|ui| {
                             for (category, _) in &self.words.learn.clone() {
                                 let category_button = egui::Button::new(format!("{}", category));
-                                self.category = category.clone();
-                                if self.words.remaining_words(&self.category) == 0 {
+                                if self.words.remaining_words(category) == 0 {
                                     ui.add_enabled(false, category_button);
                                 } else {
                                     if ui.add(category_button).clicked()
