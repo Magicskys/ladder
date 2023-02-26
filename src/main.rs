@@ -14,6 +14,11 @@ use tts::*;
 #[macro_use]
 extern crate serde;
 
+#[cfg(target_os = "windows")]
+static DEFAULT_FONT_PATH: &str = "C:\\Windows\\Fonts\\SIMSUN.TTC";
+#[cfg(target_os = "macos")]
+static DEFAULT_FONT_PATH: &str = "/System/Library/Fonts/STHeiti Light.ttc";
+
 type Category = HashMap<String, HashMap<String, String>>;
 
 trait Tool {
@@ -143,20 +148,18 @@ fn main() {
 
 fn setup_custom_fonts(ctx: &egui::Context) {
     let mut fonts = egui::FontDefinitions::default();
-    fonts.font_data.insert(
-        "宋体".to_owned(),
-        egui::FontData::from_static(include_bytes!("C:\\Windows\\Fonts\\SIMSUN.TTC")),
-    );
+    if let Ok(font_data) = fs::read(DEFAULT_FONT_PATH) {
+        fonts.font_data.insert(
+            "宋体".to_owned(),
+            egui::FontData::from_owned(font_data),
+        );
+    };
+
     fonts
         .families
         .entry(egui::FontFamily::Proportional)
         .or_default()
         .insert(0, "宋体".to_owned());
-    fonts
-        .families
-        .entry(egui::FontFamily::Monospace)
-        .or_default()
-        .push("宋体".to_owned());
 
     ctx.set_fonts(fonts);
 }
