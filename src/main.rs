@@ -270,12 +270,13 @@ impl eframe::App for EnglishApp {
                 ui.heading("");
                 ui.spacing_mut().item_spacing.x = 0.0;
                 ui.label("Please input english word");
-                egui::TextEdit::singleline(&mut self.text)
+                let word_input = egui::TextEdit::singleline(&mut self.text)
                     .desired_rows(4)
                     .hint_text("Input and click submit")
                     .show(ui);
 
                 if ui.button("submit").clicked() || ui.ctx().input().key_released(egui::Key::Enter) {
+                    word_input.response.request_focus();
                     self.submit_word();
                 }
             });
