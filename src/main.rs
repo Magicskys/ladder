@@ -11,6 +11,20 @@ use rand::seq::IteratorRandom;
 use egui_notify::{Toasts};
 use tts::*;
 
+#[derive(PartialEq, Debug)]
+enum LevelEnum {
+    Low,
+    Media,
+    High,
+}
+
+impl Default for LevelEnum {
+    fn default() -> Self {
+        LevelEnum::Low
+    }
+}
+
+
 #[macro_use]
 extern crate serde;
 
@@ -95,11 +109,12 @@ struct EnglishApp {
     correct_rate: i32,
     error_rate: i32,
     tts: Option<Tts>,
+    level: LevelEnum,
 }
 
 impl EnglishApp {
     fn play_audio(&mut self) -> Option<()> {
-        if self.question != "" {
+        if self.level == LevelEnum::Low && self.question != "" {
             let x = self.tts.as_mut()?;
             (*x).speak(self.answer.clone(), false);
         }
@@ -198,6 +213,9 @@ impl eframe::App for EnglishApp {
             });
         egui::CentralPanel::default().show(ctx, |ui| {
             ui.with_layout(Layout::left_to_right(egui::Align::TOP), |ui| {
+                if ui.button("reload").clicked() {
+                    self.words = read_words_json();
+                }
                 if ui.button("save progress").clicked() {
                     match self.words.save_progress() {
                         Ok(_) => self.toasts.success("Save Success;").set_duration(Some(Duration::from_secs(3))),
@@ -208,6 +226,15 @@ impl eframe::App for EnglishApp {
                     self.words.review();
                     self.toasts.success("Review success;").set_duration(Some(Duration::from_secs(3)));
                 };
+                egui::ComboBox::from_label("Level")
+                    .selected_text(format!("{:?}", self.level))
+                    .width(50.0)
+                    .show_ui(ui, |ui| {
+                        ui.set_min_width(50.0);
+                        ui.selectable_value(&mut self.level, LevelEnum::Low, "Low");
+                        // ui.selectable_value(&mut self.level, LevelEnum::Media, "Median");
+                        ui.selectable_value(&mut self.level, LevelEnum::High, "High");
+                    })
             });
             ui.horizontal(|ui| {
                 if self.category != "" {
