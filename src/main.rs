@@ -1,4 +1,4 @@
-#![windows_subsystem = "windows"]
+// #![windows_subsystem = "windows"]
 
 use std::collections::HashMap;
 use std::{fs, io};
@@ -154,6 +154,24 @@ impl EnglishApp {
         s.tts = Tts::default().ok();
         s
     }
+
+    fn submit_word(&mut self) {
+        if self.text == self.answer {
+            self.toasts.success("Success Word").set_duration(Some(Duration::from_secs(3)));
+            self.correct_rate += 1;
+            self.words.complete_word(&self.category, &self.question, self.answer.clone());
+        } else {
+            self.error_rate += 1;
+            self.toasts.error("Error Word").set_duration(Some(Duration::from_secs(3)));
+        }
+        self.text = "".to_string();
+        if let Some(wd) = self.words.learn.get(&self.category) {
+            let sample = wd.random_sample();
+            self.question = sample.0;
+            self.answer = sample.1;
+            self.play_audio();
+        };
+    }
 }
 
 fn main() {
@@ -252,25 +270,13 @@ impl eframe::App for EnglishApp {
                 ui.heading("");
                 ui.spacing_mut().item_spacing.x = 0.0;
                 ui.label("Please input english word");
-                egui::TextEdit::multiline(&mut self.text)
+                egui::TextEdit::singleline(&mut self.text)
+                    .desired_rows(4)
                     .hint_text("Input and click submit")
                     .show(ui);
-                if ui.button("submit").clicked() {
-                    if self.text == self.answer {
-                        self.toasts.success("Success Word").set_duration(Some(Duration::from_secs(3)));
-                        self.correct_rate += 1;
-                        self.words.complete_word(&self.category, &self.question, self.answer.clone());
-                    } else {
-                        self.error_rate += 1;
-                        self.toasts.error("Error Word").set_duration(Some(Duration::from_secs(3)));
-                    }
-                    self.text = "".to_string();
-                    if let Some(wd) = self.words.learn.get(&self.category) {
-                        let sample = wd.random_sample();
-                        self.question = sample.0;
-                        self.answer = sample.1;
-                        self.play_audio();
-                    };
+
+                if ui.button("submit").clicked() || ui.ctx().input().key_released(egui::Key::Enter) {
+                    self.submit_word();
                 }
             });
         });
