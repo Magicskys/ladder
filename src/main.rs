@@ -1,4 +1,4 @@
-// #![windows_subsystem = "windows"]
+#![windows_subsystem = "windows"]
 
 use std::collections::HashMap;
 use std::{fs, io};
@@ -112,17 +112,6 @@ struct EnglishApp {
     level: LevelEnum,
 }
 
-impl EnglishApp {
-    fn play_audio(&mut self) -> Option<()> {
-        if self.level == LevelEnum::Low && self.question != "" {
-            let x = self.tts.as_mut()?;
-            (*x).speak(self.answer.clone(), false);
-        }
-        Some(())
-    }
-}
-
-
 fn read_words_json() -> Words {
     let words = Words { learn: HashMap::new(), complete: HashMap::new() };
     let file = fs::read_to_string("words.json");
@@ -155,6 +144,23 @@ impl EnglishApp {
         s
     }
 
+    fn play_audio(&mut self) -> Option<()> {
+        if self.level == LevelEnum::Low && self.question != "" {
+            let x = self.tts.as_mut()?;
+            (*x).speak(self.answer.clone(), false);
+        }
+        Some(())
+    }
+
+    fn choice_word(&mut self) {
+        if let Some(wd) = self.words.learn.get(&self.category) {
+            let sample = wd.random_sample();
+            self.question = sample.0;
+            self.answer = sample.1;
+            self.play_audio();
+        }
+    }
+
     fn submit_word(&mut self) {
         if self.text == self.answer {
             self.toasts.success("Success Word").set_duration(Some(Duration::from_secs(3)));
@@ -165,12 +171,13 @@ impl EnglishApp {
             self.toasts.error("Error Word").set_duration(Some(Duration::from_secs(3)));
         }
         self.text = "".to_string();
-        if let Some(wd) = self.words.learn.get(&self.category) {
-            let sample = wd.random_sample();
-            self.question = sample.0;
-            self.answer = sample.1;
-            self.play_audio();
-        };
+        self.choice_word();
+    }
+
+    fn reload_question(&mut self) {
+        self.choice_word();
+        self.correct_rate = 0;
+        self.error_rate = 0;
     }
 }
 
@@ -215,14 +222,7 @@ impl eframe::App for EnglishApp {
                                     if ui.add(category_button).clicked()
                                     {
                                         self.category = category.clone();
-                                        if let Some(wd) = self.words.learn.get(&self.category) {
-                                            let sample = wd.random_sample();
-                                            self.correct_rate = 0;
-                                            self.error_rate = 0;
-                                            self.question = sample.0;
-                                            self.answer = sample.1;
-                                            self.play_audio();
-                                        };
+                                        self.reload_question();
                                     };
                                 };
                             }
@@ -233,6 +233,7 @@ impl eframe::App for EnglishApp {
             ui.with_layout(Layout::left_to_right(egui::Align::TOP), |ui| {
                 if ui.button("reload").clicked() {
                     self.words = read_words_json();
+                    self.reload_question();
                 }
                 if ui.button("save progress").clicked() {
                     match self.words.save_progress() {
