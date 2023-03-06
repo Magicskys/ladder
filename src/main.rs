@@ -110,6 +110,7 @@ struct EnglishApp {
     error_rate: i32,
     tts: Option<Tts>,
     level: LevelEnum,
+    hint: bool,
 }
 
 fn read_words_json() -> Words {
@@ -263,12 +264,19 @@ impl eframe::App for EnglishApp {
                     ui.label(format!("completed word {}", self.words.completed_words(&self.category)));
                 };
             });
+            ui.horizontal(|ui| {
+                ui.checkbox(&mut self.hint, "Hint");
+            });
             ui.vertical_centered(|ui| {
                 ui.add_space(40.0);
                 if ui.add(Label::new(RichText::new(&self.question).heading()).sense(Sense::click())).clicked() {
                     self.play_audio();
                 }
-                ui.heading("");
+                if self.hint {
+                    ui.heading(format!("{}", self.answer));
+                } else {
+                    ui.heading("");
+                }
                 ui.spacing_mut().item_spacing.x = 0.0;
                 ui.label("Please input english word");
                 let word_input = egui::TextEdit::singleline(&mut self.text)
