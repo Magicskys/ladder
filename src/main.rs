@@ -1,5 +1,6 @@
 #![windows_subsystem = "windows"]
 
+use rand::Rng;
 use std::collections::HashMap;
 use std::{fs, io};
 use std::fs::File;
@@ -97,17 +98,24 @@ impl Words {
     }
 }
 
+#[derive(Default)]
+struct QACount {
+    correct_rate: i32,
+    error_rate: i32,
+}
+
 
 #[derive(Default)]
 struct EnglishApp {
+    category_vec: Vec<String>,
     toasts: Toasts,
     words: Words,
     text: String,
     category: String,
     question: String,
     answer: String,
-    correct_rate: i32,
-    error_rate: i32,
+    hint_answer: String,
+    qa_count: QACount,
     tts: Option<Tts>,
     level: LevelEnum,
     hint: bool,
@@ -141,6 +149,8 @@ impl EnglishApp {
         let words = read_words_json();
         let mut s = Self::default();
         s.words = words;
+        s.category_vec = Vec::from_iter(s.words.learn.keys().cloned());
+        s.category_vec.sort();
         s.tts = Tts::default().ok();
         s
     }
@@ -158,6 +168,7 @@ impl EnglishApp {
             let sample = wd.random_sample();
             self.question = sample.0;
             self.answer = sample.1;
+            self.hint_answer = self.hint_word();
             self.play_audio();
         }
     }
@@ -165,20 +176,33 @@ impl EnglishApp {
     fn submit_word(&mut self) {
         if self.text == self.answer {
             self.toasts.success("Success Word").set_duration(Some(Duration::from_secs(3)));
-            self.correct_rate += 1;
+            self.qa_count.correct_rate += 1;
             self.words.complete_word(&self.category, &self.question, self.answer.clone());
         } else {
-            self.error_rate += 1;
+            self.qa_count.error_rate += 1;
             self.toasts.error("Error Word").set_duration(Some(Duration::from_secs(3)));
         }
         self.text = "".to_string();
         self.choice_word();
     }
 
+    fn hint_word(&self) -> String {
+        let mut rng = rand::thread_rng();
+        let mut hint_answer = self.answer.clone();
+        unsafe {
+            for i in hint_answer.as_bytes_mut() {
+                if rng.gen_bool(0.5) {
+                    *i = '_' as u8
+                }
+            }
+        }
+        hint_answer
+    }
+
     fn reload_question(&mut self) {
         self.choice_word();
-        self.correct_rate = 0;
-        self.error_rate = 0;
+        self.qa_count.correct_rate = 0;
+        self.qa_count.error_rate = 0;
     }
 }
 
@@ -215,9 +239,9 @@ impl eframe::App for EnglishApp {
                 ScrollArea::vertical()
                     .show_viewport(ui, |ui, _viewport| {
                         ui.vertical_centered_justified(|ui| {
-                            for (category, _) in &self.words.learn.clone() {
+                            for category in self.category_vec.clone() {
                                 let category_button = egui::Button::new(format!("{}", category));
-                                if self.words.remaining_words(category) == 0 {
+                                if self.words.remaining_words(&category) == 0 {
                                     ui.add_enabled(false, category_button);
                                 } else {
                                     if ui.add(category_button).clicked()
@@ -234,6 +258,8 @@ impl eframe::App for EnglishApp {
             ui.with_layout(Layout::left_to_right(egui::Align::TOP), |ui| {
                 if ui.button("reload").clicked() {
                     self.words = read_words_json();
+                    self.category_vec = Vec::from_iter(self.words.learn.keys().cloned());
+                    self.category_vec.sort();
                     self.reload_question();
                 }
                 if ui.button("save progress").clicked() {
@@ -273,7 +299,7 @@ impl eframe::App for EnglishApp {
                     self.play_audio();
                 }
                 if self.hint {
-                    ui.heading(format!("{}", self.answer));
+                    ui.heading(format!("{}", self.hint_answer));
                 } else {
                     ui.heading("");
                 }
@@ -292,8 +318,8 @@ impl eframe::App for EnglishApp {
         });
         egui::TopBottomPanel::bottom("bottom").show(ctx, |ui| {
             ui.horizontal(|ui| {
-                ui.label(format!("Correct rate: {}", self.correct_rate));
-                ui.put(egui::Rect::from_min_size(ui.min_rect().min + egui::Vec2::new(230.0, 0.0), ui.min_size()), egui::Label::new(format!("Error rate: {}", self.error_rate)));
+                ui.label(format!("Correct rate: {}", self.qa_count.correct_rate));
+                ui.put(egui::Rect::from_min_size(ui.min_rect().min + egui::Vec2::new(230.0, 0.0), ui.min_size()), egui::Label::new(format!("Error rate: {}", self.qa_count.error_rate)));
                 ui.with_layout(Layout::right_to_left(Align::Center), |ui| {
                     ui.hyperlink_to("About", "https://github.com/Magicskys/ladder");
                 })
