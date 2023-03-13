@@ -192,7 +192,9 @@ impl EnglishApp {
         unsafe {
             for i in hint_answer.as_bytes_mut() {
                 if rng.gen_bool(0.5) {
-                    *i = '_' as u8
+                    if *i != ' ' as u8 {
+                        *i = '_' as u8
+                    }
                 }
             }
         }
